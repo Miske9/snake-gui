@@ -11,6 +11,7 @@ import (
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 )
 
+// konstantne vrijednosti - Matija
 const (
 	WindowHeight = 600
 	WindowWidth  = 800
@@ -27,6 +28,7 @@ type Point struct {
 	x, y int
 }
 
+// struktura igre - Matija
 type Game struct {
 	snake       []Point
 	food        Point
@@ -44,6 +46,7 @@ type Game struct {
 	levelTimer  time.Time
 }
 
+// inicijalizacija igre - Matija
 func (g *Game) Init() {
 	g.snake = []Point{{Cols / 2, Rows / 2}}
 	g.dir = Point{1, 0}
@@ -59,6 +62,7 @@ func (g *Game) Init() {
 	g.obstacles = []Point{}
 }
 
+// postavljanje hrane - Massimo
 func (g *Game) placeFood() Point {
 	for {
 		x := rand.Intn(Cols)
@@ -70,6 +74,7 @@ func (g *Game) placeFood() Point {
 	}
 }
 
+// provjera da li je ćelija zauzeta - Massimo
 func (g *Game) isCellOccupied(x, y int) bool {
 	for _, p := range g.snake {
 		if p.x == x && p.y == y {
@@ -84,6 +89,7 @@ func (g *Game) isCellOccupied(x, y int) bool {
 	return false
 }
 
+// postavljanje prepreka - Massimo
 func (g *Game) placeObstacles() {
 	g.obstacles = []Point{}
 	if g.level >= 3 {
@@ -97,6 +103,7 @@ func (g *Game) placeObstacles() {
 	}
 }
 
+// ažuriranje igre, provjerava dali je igra završena ili nije i dali je igrač prošao level ili nije - Matija
 func (g *Game) Update() error {
 	if g.gameOver {
 		if ebiten.IsKeyPressed(ebiten.KeyR) {
@@ -110,7 +117,7 @@ func (g *Game) Update() error {
 		}
 		return nil
 	}
-
+	// Ako level nije završen, čekaj 3 sekunde pre nego što se nastavi igra - Matija
 	if g.levelOver {
 		if time.Since(g.levelTimer).Seconds() > 3 {
 			g.levelOver = false
@@ -120,7 +127,7 @@ func (g *Game) Update() error {
 		return nil
 	}
 
-	// Ako je level završen, čekaj 3 sekunde pre nego što nastavi
+	// Ako je level završen, čekaj 3 sekunde pre nego što nastavi - Matija
 	if g.levelPassed {
 		if time.Since(g.levelTimer).Seconds() > 3 {
 			g.levelPassed = false
@@ -130,7 +137,7 @@ func (g *Game) Update() error {
 		return nil
 	}
 
-	// Kontrola kretanja
+	// Kontrola kretanja - Massimo
 	if ebiten.IsKeyPressed(ebiten.KeyW) && g.dir.y == 0 {
 		g.dir = Point{0, -1}
 	}
@@ -144,7 +151,7 @@ func (g *Game) Update() error {
 		g.dir = Point{1, 0}
 	}
 
-	// Usporenje zmije
+	// Usporenje zmije jer se inače kreće prebrzo - Massimo
 	g.frameCount++
 	if g.frameCount%Speed != 0 {
 		return nil
@@ -152,7 +159,7 @@ func (g *Game) Update() error {
 
 	head := Point{g.snake[0].x + g.dir.x, g.snake[0].y + g.dir.y}
 
-	// Sudar sa zidovima
+	// Sudar sa zidovima - Matija
 	if head.x < 0 || head.x >= Cols || head.y < 0 || head.y >= Rows {
 		g.lives--
 		g.score = 0
@@ -162,6 +169,7 @@ func (g *Game) Update() error {
 			g.levelOver = false
 			g.levelPassed = false
 		}
+		//zmija ostaje iste veličine - Matija
 		for i := range g.snake {
 			g.snake[i] = Point{Cols/2 - i, Rows / 2}
 		}
@@ -170,7 +178,7 @@ func (g *Game) Update() error {
 		return nil
 	}
 
-	// Sudar sa samim sobom
+	// Sudar sa samim sobom - Matija
 	for _, p := range g.snake[1:] {
 		if p == head {
 			g.lives--
@@ -181,6 +189,7 @@ func (g *Game) Update() error {
 				g.levelOver = false
 				g.levelPassed = false
 			}
+			//zmija ostaje iste veličine - Matija
 			for i := range g.snake {
 				g.snake[i] = Point{Cols/2 - i, Rows / 2}
 			}
@@ -190,7 +199,7 @@ func (g *Game) Update() error {
 		}
 	}
 
-	// Sudar sa preprekama
+	// Sudar sa preprekama - Matija
 	for _, obs := range g.obstacles {
 		if obs == head {
 			g.lives--
@@ -201,6 +210,7 @@ func (g *Game) Update() error {
 				g.levelOver = false
 				g.levelPassed = false
 			}
+			//zmija ostaje iste veličine - Matija
 			for i := range g.snake {
 				g.snake[i] = Point{Cols/2 - i, Rows / 2}
 			}
@@ -212,7 +222,7 @@ func (g *Game) Update() error {
 
 	g.snake = append([]Point{head}, g.snake...)
 
-	// Ako zmija pojede hranu
+	// Ako zmija pojede hranu - Matija
 	if head == g.food {
 		g.score++
 		g.food = g.placeFood()
@@ -230,7 +240,7 @@ func (g *Game) Update() error {
 		}
 	} else {
 		g.snake = g.snake[:len(g.snake)-1]
-	}
+	} //zmija raste samo kad se pojede hrana - Matija
 
 	return nil
 }
@@ -238,7 +248,7 @@ func (g *Game) Update() error {
 func (g *Game) Draw(screen *ebiten.Image) {
 	screen.Fill(color.RGBA{0, 0, 0, 255})
 
-	// Crtanje okvira
+	// Crtanje okvira - Massimo i Matija
 	borderColor := color.RGBA{255, 255, 255, 255}
 	for x := 0; x < ScreenWidth; x++ {
 		screen.Set(x, 0, borderColor)
@@ -249,7 +259,7 @@ func (g *Game) Draw(screen *ebiten.Image) {
 		screen.Set(ScreenWidth-1, y, borderColor)
 	}
 
-	// Crtanje prepreka
+	// Crtanje prepreka - Massimo i Matija
 	for _, obs := range g.obstacles {
 		obstacleImg := ebiten.NewImage(CellSize, CellSize)
 		obstacleImg.Fill(color.RGBA{128, 128, 128, 255})
@@ -258,7 +268,7 @@ func (g *Game) Draw(screen *ebiten.Image) {
 		screen.DrawImage(obstacleImg, op)
 	}
 
-	// Crtanje zmije
+	// Crtanje zmije - Massimo i Matija
 	for _, p := range g.snake {
 		snakeImg := ebiten.NewImage(CellSize, CellSize)
 		snakeImg.Fill(color.RGBA{0, 255, 0, 255})
@@ -267,14 +277,14 @@ func (g *Game) Draw(screen *ebiten.Image) {
 		screen.DrawImage(snakeImg, op)
 	}
 
-	// Crtanje hrane
+	// Crtanje hrane - Massimo i Matija
 	foodImg := ebiten.NewImage(CellSize, CellSize)
 	foodImg.Fill(color.RGBA{255, 255, 0, 255})
 	op := &ebiten.DrawImageOptions{}
 	op.GeoM.Translate(float64(g.food.x*CellSize), float64(g.food.y*CellSize))
 	screen.DrawImage(foodImg, op)
 
-	// Tekst
+	// Ispis na ekranu - Matija
 	ebitenutil.DebugPrint(screen, fmt.Sprintf("Score: %d | Lives: %d | Level: %d", g.score, g.lives, g.level))
 	if g.gameOver {
 		ebitenutil.DebugPrint(screen, "\nGAME OVER! Press R to Restart")
