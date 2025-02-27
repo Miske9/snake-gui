@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	WindowHeight = 800
+	WindowHeight = 600
 	WindowWidth  = 800
 	ScreenWidth  = 400
 	ScreenHeight = 200
@@ -38,6 +38,7 @@ type Game struct {
 	gamePassed  bool
 	frameCount  int
 	levelPassed bool
+	levelOver   bool
 	obstacles   []Point
 	MaxLevel    int
 	levelTimer  time.Time
@@ -52,6 +53,7 @@ func (g *Game) Init() {
 	g.score = 0
 	g.gameOver = false
 	g.levelPassed = false
+	g.levelOver = false
 	g.gamePassed = false
 	g.MaxLevel = 4
 	g.obstacles = []Point{}
@@ -109,6 +111,15 @@ func (g *Game) Update() error {
 		return nil
 	}
 
+	if g.levelOver {
+		if time.Since(g.levelTimer).Seconds() > 3 {
+			g.levelOver = false
+			g.food = g.placeFood()
+			g.placeObstacles()
+		}
+		return nil
+	}
+
 	// Ako je level završen, čekaj 3 sekunde pre nego što nastavi
 	if g.levelPassed {
 		if time.Since(g.levelTimer).Seconds() > 3 {
@@ -145,11 +156,17 @@ func (g *Game) Update() error {
 	if head.x < 0 || head.x >= Cols || head.y < 0 || head.y >= Rows {
 		g.lives--
 		g.score = 0
+		g.levelOver = true
 		if g.lives == 0 {
 			g.gameOver = true
+			g.levelOver = false
+			g.levelPassed = false
 		}
-		g.snake = []Point{{Cols / 2, Rows / 2}}
+		for i := range g.snake {
+			g.snake[i] = Point{Cols/2 - i, Rows / 2}
+		}
 		g.dir = Point{1, 0}
+		g.levelTimer = time.Now()
 		return nil
 	}
 
@@ -158,11 +175,17 @@ func (g *Game) Update() error {
 		if p == head {
 			g.lives--
 			g.score = 0
+			g.levelOver = true
 			if g.lives == 0 {
 				g.gameOver = true
+				g.levelOver = false
+				g.levelPassed = false
 			}
-			g.snake = []Point{{Cols / 2, Rows / 2}}
+			for i := range g.snake {
+				g.snake[i] = Point{Cols/2 - i, Rows / 2}
+			}
 			g.dir = Point{1, 0}
+			g.levelTimer = time.Now()
 			return nil
 		}
 	}
@@ -172,11 +195,17 @@ func (g *Game) Update() error {
 		if obs == head {
 			g.lives--
 			g.score = 0
+			g.levelOver = true
 			if g.lives == 0 {
 				g.gameOver = true
+				g.levelOver = false
+				g.levelPassed = false
 			}
-			g.snake = []Point{{Cols / 2, Rows / 2}}
+			for i := range g.snake {
+				g.snake[i] = Point{Cols/2 - i, Rows / 2}
+			}
 			g.dir = Point{1, 0}
+			g.levelTimer = time.Now()
 			return nil
 		}
 	}
@@ -255,6 +284,9 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	}
 	if g.levelPassed {
 		ebitenutil.DebugPrint(screen, "\nLEVEL PASSED! Starting next level...")
+	}
+	if g.levelOver {
+		ebitenutil.DebugPrint(screen, "\nLEVEL FAILED! Starting current level...")
 	}
 }
 
